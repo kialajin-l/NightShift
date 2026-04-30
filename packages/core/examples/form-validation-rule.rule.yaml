@@ -1,0 +1,158 @@
+# RuleForge 自动生成的规则文件
+# 符合 REP v0.1 标准
+# 生成时间: 2024-01-01
+# 置信度: 高
+
+meta:
+  id: form-validation-rule
+  name: 表单验证最佳实践规则
+  version: 1.0.0
+  description: 自动生成表单验证逻辑，包含前端验证和后端数据校验
+  author: RuleForge Auto-Generated
+  created: 2024-01-01
+  updated: 2024-01-01
+
+rule:
+  trigger:
+    type: keyword
+    pattern: 表单验证
+    context: 用户需要表单验证、数据校验、输入验证等功能
+  condition:
+    type: frequency
+    threshold: 2
+  suggestion:
+    type: template
+    template: 表单验证标准实现模板
+    code: |
+      // React 表单验证 Hook 示例
+      import { useState, useCallback } from 'react';
+      
+      interface ValidationRule {
+        required?: boolean;
+        minLength?: number;
+        maxLength?: number;
+        pattern?: RegExp;
+        validator?: (value: string) => boolean;
+        message: string;
+      }
+      
+      interface ValidationResult {
+        isValid: boolean;
+        errors: string[];
+      }
+      
+      export function useFormValidation(rules: Record<string, ValidationRule[]>) {
+        const [errors, setErrors] = useState<Record<string, string[]>>({});
+        
+        const validateField = useCallback((fieldName: string, value: string): ValidationResult => {
+          const fieldRules = rules[fieldName] || [];
+          const fieldErrors: string[] = [];
+          
+          for (const rule of fieldRules) {
+            if (rule.required && (!value || value.trim() === '')) {
+              fieldErrors.push(rule.message);
+              continue;
+            }
+            
+            if (rule.minLength && value.length < rule.minLength) {
+              fieldErrors.push(rule.message);
+              continue;
+            }
+            
+            if (rule.maxLength && value.length > rule.maxLength) {
+              fieldErrors.push(rule.message);
+              continue;
+            }
+            
+            if (rule.pattern && !rule.pattern.test(value)) {
+              fieldErrors.push(rule.message);
+              continue;
+            }
+            
+            if (rule.validator && !rule.validator(value)) {
+              fieldErrors.push(rule.message);
+            }
+          }
+          
+          return {
+            isValid: fieldErrors.length === 0,
+            errors: fieldErrors
+          };
+        }, [rules]);
+        
+        const validateForm = useCallback((formData: Record<string, string>): ValidationResult => {
+          const allErrors: Record<string, string[]> = {};
+          let isValid = true;
+          
+          for (const [fieldName, value] of Object.entries(formData)) {
+            const result = validateField(fieldName, value);
+            if (!result.isValid) {
+              isValid = false;
+              allErrors[fieldName] = result.errors;
+            }
+          }
+          
+          setErrors(allErrors);
+          return { isValid, errors: Object.values(allErrors).flat() };
+        }, [validateField]);
+        
+        return { errors, validateField, validateForm };
+      }
+      
+      // 使用示例
+      const validationRules = {
+        email: [
+          { required: true, message: '邮箱不能为空' },
+          { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: '邮箱格式不正确' }
+        ],
+        password: [
+          { required: true, message: '密码不能为空' },
+          { minLength: 6, message: '密码至少6位' },
+          { maxLength: 20, message: '密码最多20位' }
+        ]
+      };
+      
+      // Pydantic 数据验证模型示例
+      from pydantic import BaseModel, EmailStr, validator
+      from typing import Optional
+      
+      class UserRegistration(BaseModel):
+          email: EmailStr
+          password: str
+          confirm_password: str
+          
+          @validator('password')
+          def password_strength(cls, v):
+              if len(v) < 6:
+                  raise ValueError('密码至少6位')
+              if len(v) > 20:
+                  raise ValueError('密码最多20位')
+              if not any(c.isupper() for c in v):
+                  raise ValueError('密码必须包含大写字母')
+              if not any(c.islower() for c in v):
+                  raise ValueError('密码必须包含小写字母')
+              if not any(c.isdigit() for c in v):
+                  raise ValueError('密码必须包含数字')
+              return v
+          
+          @validator('confirm_password')
+          def passwords_match(cls, v, values):
+              if 'password' in values and v != values['password']:
+                  raise ValueError('两次输入的密码不一致')
+              return v
+    description: 自动生成前后端统一的数据验证逻辑，确保数据安全和一致性
+
+compatibility:
+  languages:
+    - typescript
+    - javascript
+    - python
+  frameworks:
+    - react
+    - vue
+    - fastapi
+    - express
+  tools:
+    - vscode
+    - webstorm
+    - nightshift

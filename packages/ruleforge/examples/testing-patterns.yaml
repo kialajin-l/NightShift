@@ -1,0 +1,575 @@
+# 测试最佳实践规则集合
+# 基于实际测试经验的单元测试和 E2E 测试最佳实践
+
+---
+# 规则 1: 单元测试结构规范
+meta:
+  id: unit-test-structure
+  name: "单元测试结构规范"
+  version: "1.0.0"
+  description: "遵循 AAA 模式（Arrange-Act-Assert）组织测试代码，提高可读性和可维护性"
+  authors:
+    - "RuleForge Auto-Generated"
+    - "测试驱动开发最佳实践"
+  license: "MIT"
+  tags:
+    - "testing"
+    - "unit-test"
+    - "structure"
+    - "aaa"
+  created_at: "2026-01-20T12:00:00Z"
+
+rule:
+  trigger:
+    keywords:
+      - "describe"
+      - "it"
+      - "test"
+      - "expect"
+      - "assert"
+    file_pattern: "**/*.test.{js,ts}"
+    language: "typescript"
+  
+  condition: "检测到测试代码结构混乱，缺少清晰的 Arrange-Act-Assert 分离"
+  
+  suggestion: |
+    遵循 AAA 模式（Arrange-Act-Assert）组织测试代码，每个测试用例应该清晰分离准备、执行和验证阶段。
+    
+    问题代码示例：
+    ```typescript
+    // ❌ 不推荐：结构混乱的测试
+    test('format greeting', () => {
+      const result = formatGreeting('hello');
+      expect(result).toBe('Hello');
+      
+      const result2 = formatGreeting('HELLO');
+      expect(result2).toBe('HELLO');
+      
+      const result3 = formatGreeting('');
+      expect(result3).toBe('');
+    });
+    ```
+    
+    修复后代码：
+    ```typescript
+    // ✅ 推荐：清晰的 AAA 结构
+    describe('formatGreeting', () => {
+      it('should capitalize the first letter of a greeting', () => {
+        // Arrange
+        const input = 'hello world';
+        
+        // Act
+        const result = formatGreeting(input);
+        
+        // Assert
+        expect(result).toBe('Hello world');
+      });
+      
+      it('should handle empty string', () => {
+        // Arrange
+        const input = '';
+        
+        // Act
+        const result = formatGreeting(input);
+        
+        // Assert
+        expect(result).toBe('');
+      });
+      
+      it('should handle already capitalized string', () => {
+        // Arrange
+        const input = 'Hello World';
+        
+        // Act
+        const result = formatGreeting(input);
+        
+        // Assert
+        expect(result).toBe('Hello World');
+      });
+    });
+    ```
+    
+    最佳实践：
+    - **Arrange**: 准备测试数据和环境
+    - **Act**: 执行被测试的功能
+    - **Assert**: 验证结果是否符合预期
+    - 每个测试用例只测试一个场景
+    - 使用清晰的测试描述
+    - 避免测试用例间的依赖
+
+compatibility:
+  frameworks:
+    vitest: ">=1.0.0"
+    jest: ">=29.0.0"
+  languages:
+    typescript: ">=4.5.0"
+    javascript: ">=ES2020"
+  rep_version: "0.1"
+
+---
+# 规则 2: Mock 使用规范
+meta:
+  id: mock-usage-patterns
+  name: "Mock 使用规范"
+  version: "1.0.0"
+  description: "合理使用 Mock 和 Stub，隔离外部依赖，提高测试稳定性和速度"
+  authors:
+    - "RuleForge Auto-Generated"
+    - "测试隔离最佳实践"
+  license: "MIT"
+  tags:
+    - "testing"
+    - "mock"
+    - "stub"
+    - "isolation"
+  created_at: "2026-01-20T12:15:00Z"
+
+rule:
+  trigger:
+    keywords:
+      - "vi.fn"
+      - "jest.fn"
+      - "mock"
+      - "spyOn"
+      - "stub"
+    file_pattern: "**/*.test.{js,ts}"
+    language: "typescript"
+  
+  condition: "检测到 Mock 使用不当，可能导致测试不稳定或难以维护"
+  
+  suggestion: |
+    合理使用 Mock 和 Stub，隔离外部依赖，确保测试的稳定性和可维护性。
+    
+    问题代码示例：
+    ```typescript
+    // ❌ 不推荐：过度 Mock
+    test('user service', () => {
+      // Mock 所有依赖，测试失去意义
+      const mockDB = { findUser: vi.fn() };
+      const mockCache = { get: vi.fn() };
+      const mockLogger = { info: vi.fn() };
+      
+      const service = new UserService(mockDB, mockCache, mockLogger);
+      // ... 复杂的 Mock 设置
+    });
+    ```
+    
+    合理的 Mock 使用：
+    ```typescript
+    // ✅ 推荐：合理的 Mock 策略
+    describe('UserService', () => {
+      let userService: UserService;
+      let mockUserRepository: jest.Mocked<UserRepository>;
+      
+      beforeEach(() => {
+        // 只 Mock 外部依赖
+        mockUserRepository = {
+          findById: jest.fn(),
+          save: jest.fn(),
+          delete: jest.fn(),
+        } as jest.Mocked<UserRepository>;
+        
+        userService = new UserService(mockUserRepository);
+      });
+      
+      it('should find user by id', async () => {
+        // Arrange
+        const userId = '123';
+        const mockUser = { id: userId, name: 'John' };
+        mockUserRepository.findById.mockResolvedValue(mockUser);
+        
+        // Act
+        const result = await userService.findUserById(userId);
+        
+        // Assert
+        expect(mockUserRepository.findById).toHaveBeenCalledWith(userId);
+        expect(result).toEqual(mockUser);
+      });
+      
+      it('should return null when user not found', async () => {
+        // Arrange
+        const userId = 'nonexistent';
+        mockUserRepository.findById.mockResolvedValue(null);
+        
+        // Act
+        const result = await userService.findUserById(userId);
+        
+        // Assert
+        expect(result).toBeNull();
+      });
+    });
+    ```
+    
+    Mock 使用指南：
+    
+    ## 应该 Mock 的情况：
+    - 外部 API 调用
+    - 数据库操作
+    - 文件系统操作
+    - 网络请求
+    - 随机数生成
+    - 当前时间
+    
+    ## 不应该 Mock 的情况：
+    - 纯函数（无副作用）
+    - 业务逻辑核心算法
+    - 简单的数据转换
+    
+    ## Mock 最佳实践：
+    ```typescript
+    // 使用类型安全的 Mock
+    interface ExternalService {
+      fetchData(): Promise<Data>;
+    }
+    
+    const mockService: jest.Mocked<ExternalService> = {
+      fetchData: jest.fn(),
+    };
+    
+    // 设置合理的默认返回值
+    mockService.fetchData.mockResolvedValue({ success: true });
+    
+    // 验证调用次数和参数
+    expect(mockService.fetchData).toHaveBeenCalledTimes(1);
+    expect(mockService.fetchData).toHaveBeenCalledWith(expectedParams);
+    ```
+
+compatibility:
+  frameworks:
+    vitest: ">=1.0.0"
+    jest: ">=29.0.0"
+  languages:
+    typescript: ">=4.5.0"
+  rep_version: "0.1"
+
+---
+# 规则 3: E2E 测试最佳实践
+meta:
+  id: e2e-testing-best-practices
+  name: "E2E 测试最佳实践"
+  version: "1.0.0"
+  description: "端到端测试的组织和执行最佳实践，确保应用整体功能的正确性"
+  authors:
+    - "RuleForge Auto-Generated"
+    - "E2E 测试自动化指南"
+  license: "MIT"
+  tags:
+    - "testing"
+    - "e2e"
+    - "cypress"
+    - "playwright"
+    - "automation"
+  created_at: "2026-01-20T12:30:00Z"
+
+rule:
+  trigger:
+    keywords:
+      - "cypress"
+      - "playwright"
+      - "e2e"
+      - "page"
+      - "fixture"
+    file_pattern: "**/e2e/*.{js,ts}"
+    language: "typescript"
+  
+  condition: "检测到 E2E 测试组织不当，可能影响测试稳定性和维护性"
+  
+  suggestion: |
+    遵循 E2E 测试最佳实践，确保测试的稳定性、可维护性和执行效率。
+    
+    问题代码示例：
+    ```typescript
+    // ❌ 不推荐：脆弱的 E2E 测试
+    it('should login and create post', () => {
+      cy.visit('/');
+      cy.get('[data-testid=username]').type('user123');
+      cy.get('[data-testid=password]').type('password123');
+      cy.get('[data-testid=login-btn]').click();
+      
+      // 依赖特定 UI 结构，容易失败
+      cy.get('.post-editor textarea').type('Hello World');
+      cy.get('.submit-button').click();
+      
+      cy.contains('Hello World').should('be.visible');
+    });
+    ```
+    
+    改进的 E2E 测试：
+    ```typescript
+    // ✅ 推荐：稳定的 E2E 测试
+    describe('Blog Application', () => {
+      beforeEach(() => {
+        // 使用测试专用的 API 准备数据
+        cy.createTestUser();
+        cy.loginTestUser();
+      });
+      
+      it('should allow authenticated user to create a post', () => {
+        // Arrange
+        const postContent = 'Test post content';
+        
+        // Act
+        cy.visit('/dashboard');
+        
+        // 使用数据属性选择器，避免 CSS 变化影响
+        cy.get('[data-testid=create-post-btn]').click();
+        cy.get('[data-testid=post-editor]').type(postContent);
+        cy.get('[data-testid=submit-post-btn]').click();
+        
+        // Assert
+        cy.get('[data-testid=post-list]')
+          .should('contain', postContent)
+          .and('be.visible');
+      });
+      
+      it('should display validation errors for empty post', () => {
+        // Act
+        cy.visit('/dashboard');
+        cy.get('[data-testid=create-post-btn]').click();
+        cy.get('[data-testid=submit-post-btn]').click();
+        
+        // Assert
+        cy.get('[data-testid=validation-error]')
+          .should('contain', 'Post content cannot be empty')
+          .and('be.visible');
+      });
+    });
+    ```
+    
+    E2E 测试最佳实践：
+    
+    ## 测试数据管理：
+    ```typescript
+    // 使用 Fixture 管理测试数据
+    beforeEach(() => {
+      cy.fixture('test-user.json').then((userData) => {
+        cy.request('POST', '/api/test/setup', userData);
+      });
+    });
+    
+    afterEach(() => {
+      cy.request('POST', '/api/test/cleanup');
+    });
+    ```
+    
+    ## 页面对象模式：
+    ```typescript
+    // 创建可重用的页面对象
+    class LoginPage {
+      visit() {
+        cy.visit('/login');
+      }
+      
+      fillCredentials(username: string, password: string) {
+        cy.get('[data-testid=username]').type(username);
+        cy.get('[data-testid=password]').type(password);
+      }
+      
+      submit() {
+        cy.get('[data-testid=login-btn]').click();
+      }
+      
+      expectSuccess() {
+        cy.url().should('include', '/dashboard');
+      }
+    }
+    
+    // 在测试中使用
+    it('should login successfully', () => {
+      const loginPage = new LoginPage();
+      loginPage.visit();
+      loginPage.fillCredentials('testuser', 'password');
+      loginPage.submit();
+      loginPage.expectSuccess();
+    });
+    ```
+    
+    ## 配置和优化：
+    ```typescript
+    // cypress.config.js
+    module.exports = {
+      e2e: {
+        baseUrl: 'http://localhost:3000',
+        viewportWidth: 1280,
+        viewportHeight: 720,
+        // 失败时重试
+        retries: {
+          runMode: 2,
+          openMode: 0,
+        },
+      },
+    };
+    ```
+
+compatibility:
+  frameworks:
+    cypress: ">=12.0.0"
+    playwright: ">=1.30.0"
+  languages:
+    typescript: ">=4.5.0"
+  rep_version: "0.1"
+
+---
+# 规则 4: 测试覆盖率和质量
+meta:
+  id: test-coverage-quality
+  name: "测试覆盖率和质量"
+  version: "1.0.0"
+  description: "确保测试覆盖关键路径，同时关注测试质量和可维护性"
+  authors:
+    - "RuleForge Auto-Generated"
+    - "测试质量评估指南"
+  license: "MIT"
+  tags:
+    - "testing"
+    - "coverage"
+    - "quality"
+    - "maintainability"
+  created_at: "2026-01-20T12:45:00Z"
+
+rule:
+  trigger:
+    keywords:
+      - "coverage"
+      - "istanbul"
+      - "vitest"
+      - "jest"
+      - "assert"
+    file_pattern: "**/*.test.{js,ts}"
+    language: "typescript"
+  
+  condition: "检测到测试覆盖率不足或测试质量有问题"
+  
+  suggestion: |
+    关注测试覆盖率和质量平衡，确保测试既全面又易于维护。
+    
+    覆盖率配置示例：
+    ```javascript
+    // vitest.config.js
+    import { defineConfig } from 'vitest/config';
+    
+    export default defineConfig({
+      test: {
+        coverage: {
+          reporter: ['text', 'html', 'lcov'],
+          thresholds: {
+            global: {
+              branches: 80,
+              functions: 80,
+              lines: 80,
+              statements: 80,
+            },
+          },
+          exclude: [
+            '**/*.config.*',
+            '**/*.d.ts',
+            '**/types/**',
+            '**/coverage/**',
+          ],
+        },
+      },
+    });
+    ```
+    
+    质量检查工具：
+    ```json
+    // package.json 脚本
+    {
+      "scripts": {
+        "test:unit": "vitest run",
+        "test:coverage": "vitest run --coverage",
+        "test:quality": "npm run test:coverage && npm run lint:test",
+        "lint:test": "eslint __tests__ --ext .ts,.js"
+      }
+    }
+    ```
+    
+    测试质量检查清单：
+    
+    ## ✅ 好的测试特征：
+    - 测试名称清晰描述行为
+    - 每个测试只验证一个场景
+    - 使用恰当的断言库
+    - 包含边界条件测试
+    - 错误场景得到充分测试
+    - 测试数据准备充分
+    
+    ## ❌ 需要改进的测试：
+    - 测试名称模糊（"test 1", "should work"）
+    - 一个测试验证多个不相关功能
+    - 过度 Mock 导致测试失去意义
+    - 缺少错误场景测试
+    - 测试依赖特定执行顺序
+    
+    质量改进示例：
+    ```typescript
+    // ❌ 需要改进的测试
+    test('user service', () => {
+      // 模糊的测试名称
+      // 验证多个不相关功能
+      const user = userService.createUser({ name: 'John' });
+      expect(user.id).toBeDefined();
+      
+      const found = userService.findUser(user.id);
+      expect(found.name).toBe('John');
+      
+      userService.deleteUser(user.id);
+      expect(userService.findUser(user.id)).toBeNull();
+    });
+    
+    // ✅ 改进后的测试
+    describe('UserService', () => {
+      describe('createUser', () => {
+        it('should create user with valid data', () => {
+          const userData = { name: 'John', email: 'john@example.com' };
+          const user = userService.createUser(userData);
+          expect(user.id).toBeDefined();
+          expect(user.name).toBe(userData.name);
+        });
+        
+        it('should throw error for invalid email', () => {
+          const invalidData = { name: 'John', email: 'invalid' };
+          expect(() => userService.createUser(invalidData)).toThrow('Invalid email');
+        });
+      });
+      
+      describe('findUser', () => {
+        it('should return user for existing id', () => {
+          const user = userService.createUser({ name: 'John' });
+          const found = userService.findUser(user.id);
+          expect(found).toEqual(user);
+        });
+        
+        it('should return null for non-existent id', () => {
+          const found = userService.findUser('nonexistent');
+          expect(found).toBeNull();
+        });
+      });
+    });
+    ```
+    
+    持续集成配置：
+    ```yaml
+    # .github/workflows/test.yml
+    name: Test and Coverage
+    on: [push, pull_request]
+    jobs:
+      test:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v3
+          - uses: actions/setup-node@v3
+          - run: npm ci
+          - run: npm run test:quality
+          - name: Upload coverage
+            uses: codecov/codecov-action@v3
+    ```
+
+compatibility:
+  frameworks:
+    vitest: ">=1.0.0"
+    jest: ">=29.0.0"
+    cypress: ">=12.0.0"
+  languages:
+    typescript: ">=4.5.0"
+  rep_version: "0.1"

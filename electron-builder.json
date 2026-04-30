@@ -1,0 +1,91 @@
+{
+  "appId": "com.nightshift.nightshift",
+  "productName": "NightShift",
+  "copyright": "Copyright © 2024 NightShift Team",
+  "directories": {
+    "output": "dist-electron-v6",
+    "buildResources": "electron/assets"
+  },
+  "files": [
+    "electron-dist/**/*",
+    "!node_modules",
+    "!.next",
+    "!src",
+    "!electron",
+    "!scripts",
+    "!release",
+    "!dist-electron",
+    "!dist-electron-v*"
+  ],
+  "extraResources": [
+    {
+      "from": ".next/standalone/",
+      "to": "standalone/"
+    },
+    {
+      "from": ".next/static/",
+      "to": "standalone/.next/static/"
+    },
+    {
+      "from": "public/",
+      "to": "standalone/public/"
+    },
+    {
+      "from": "themes/",
+      "to": "standalone/themes/",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "electron/assets/",
+      "to": ".",
+      "filter": ["icon.*"]
+    }
+  ],
+  "extraMetadata": {
+    "main": "electron-dist/main.js"
+  },
+  "win": {
+    "target": [
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "electron/assets/icon.ico",
+    "requestedExecutionLevel": "asInvoker"
+  },
+  "portable": {
+    "artifactName": "${productName}-${version}-portable.${ext}",
+    "useZip": true
+  },
+  "mac": {
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      }
+    ],
+    "icon": "electron/assets/icon.icns",
+    "category": "public.app-category.developer-tools",
+    "darkModeSupport": true
+  },
+  "linux": {
+    "target": [
+      {
+        "target": "AppImage",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "electron/assets/icon.png",
+    "category": "Development"
+  },
+  "publish": {
+    "provider": "github",
+    "releaseType": "release"
+  },
+  "buildVersion": "1.0.0",
+  "compression": "maximum",
+  "forceCodeSigning": false,
+  "asar": false,
+  "npmRebuild": false
+}

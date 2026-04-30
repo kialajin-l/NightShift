@@ -1,0 +1,181 @@
+name: Build & Package
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build-next:
+    name: Next.js Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Next.js Build
+        run: npx next build
+
+      - name: Upload .next output
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: .next/
+          retention-days: 3
+
+  build-electron:
+    name: Electron Build
+    runs-on: ubuntu-latest
+    needs: build-next
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Download .next output
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next/
+
+      - name: Build Electron dist
+        run: node scripts/build-electron.js
+
+      - name: Upload electron dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: electron-dist
+          path: electron-dist/
+          retention-days: 3
+
+  package-windows:
+    name: Package (Windows)
+    runs-on: windows-latest
+    needs: [build-next, build-electron]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Download .next output
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next/
+
+      - name: Download electron dist
+        uses: actions/download-artifact@v4
+        with:
+          name: electron-dist
+          path: electron-dist/
+
+      - name: Package with electron-builder
+        run: npx electron-builder --win portable
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows portable
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightshift-windows-portable
+          path: dist-electron-v6/*.exe
+          retention-days: 7
+
+  package-macos:
+    name: Package (macOS)
+    runs-on: macos-latest
+    needs: [build-next, build-electron]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Download .next output
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next/
+
+      - name: Download electron dist
+        uses: actions/download-artifact@v4
+        with:
+          name: electron-dist
+          path: electron-dist/
+
+      - name: Package with electron-builder
+        run: npx electron-builder --mac dmg
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload macOS dmg
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightshift-macos-dmg
+          path: dist-electron-v6/*.dmg
+          retention-days: 7
+
+  package-linux:
+    name: Package (Linux)
+    runs-on: ubuntu-latest
+    needs: [build-next, build-electron]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Download .next output
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next/
+
+      - name: Download electron dist
+        uses: actions/download-artifact@v4
+        with:
+          name: electron-dist
+          path: electron-dist/
+
+      - name: Install display server for Electron
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      - name: Package with electron-builder
+        run: xvfb-run npx electron-builder --linux AppImage
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightshift-linux-appimage
+          path: dist-electron-v6/*.AppImage
+          retention-days: 7

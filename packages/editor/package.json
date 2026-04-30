@@ -1,0 +1,70 @@
+{
+  "name": "@nightshift/editor",
+  "version": "0.1.0",
+  "displayName": "NightShift for Trae",
+  "description": "Your 24/7 AI Dev Team - Multi-Agent Coding Assistant",
+  "publisher": "nightshift",
+  "engines": {
+    "vscode": "^1.85.0",
+    "trae": "^1.0.0"
+  },
+  "categories": ["AI", "Productivity"],
+  "activationEvents": ["onCommand:nightshift.start"],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "nightshift.start",
+        "title": "NightShift: Start Multi-Agent Session"
+      },
+      {
+        "command": "nightshift.showPlan",
+        "title": "NightShift: Show Task Plan"
+      },
+      {
+        "command": "nightshift.stop",
+        "title": "NightShift: Stop Session"
+      }
+    ],
+    "configuration": {
+      "title": "NightShift",
+      "properties": {
+        "nightshift.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable NightShift multi-agent mode"
+        },
+        "nightshift.autoPlan": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-generate task plan from natural language"
+        },
+        "nightshift.ruleforgeEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable RuleForge rule injection"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "watch": "tsc -watch -p .",
+    "package": "vsce package",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@nightshift/core": "^0.1.0",
+    "@nightshift/ruleforge-bridge": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "vitest": "^1.2.2"
+  }
+}

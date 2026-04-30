@@ -1,0 +1,329 @@
+# Vue 3 最佳实践规则集合
+# 基于实际开发经验总结的 Vue 3 最佳实践
+
+---
+# 规则 1: Props 类型校验
+meta:
+  id: vue3-props-validation
+  name: "Vue 3 Props 类型校验"
+  version: "1.0.0"
+  description: "使用 TypeScript interface 定义 props，提供完整的类型安全和 IDE 智能提示"
+  authors:
+    - "RuleForge Auto-Generated"
+    - "Vue 3 最佳实践指南"
+  license: "MIT"
+  tags:
+    - "vue3"
+    - "typescript"
+    - "props"
+    - "validation"
+  created_at: "2026-01-20T10:00:00Z"
+
+rule:
+  trigger:
+    keywords:
+      - "defineProps"
+      - "props"
+      - "interface"
+      - "validation"
+    file_pattern: "**/*.vue"
+    language: "typescript"
+  
+  condition: "检测到 Vue 组件使用数组形式定义 props，缺少类型安全和运行时验证"
+  
+  suggestion: |
+    使用 TypeScript interface 定义 props，提供完整的类型安全、IDE 智能提示和运行时验证。
+    
+    问题代码示例：
+    ```typescript
+    // ❌ 不推荐：数组形式，缺少类型安全
+    export default {
+      props: ['title', 'count', 'disabled']
+    }
+    ```
+    
+    修复后代码：
+    ```typescript
+    // ✅ 推荐：对象形式，完整的类型安全
+    interface Props {
+      title: string
+      count?: number
+      disabled?: boolean
+    }
+    
+    export default {
+      props: {
+        title: {
+          type: String,
+          required: true,
+          validator: (value: string) => value.length > 0
+        },
+        count: {
+          type: Number,
+          default: 0,
+          validator: (value: number) => value >= 0
+        },
+        disabled: {
+          type: Boolean,
+          default: false
+        }
+      } as const
+    }
+    ```
+    
+    或者使用 Composition API：
+    ```typescript
+    // ✅ 推荐：Composition API + TypeScript
+    interface Props {
+      title: string
+      count?: number
+    }
+    
+    const props = defineProps<Props>()
+    ```
+
+compatibility:
+  frameworks:
+    vue: ">=3.3.0"
+    "@vue/composition-api": ">=1.0.0"
+  languages:
+    typescript: ">=5.0.0"
+  rep_version: "0.1"
+
+---
+# 规则 2: Composables 命名规范
+meta:
+  id: vue3-composables-naming
+  name: "Vue 3 Composables 命名规范"
+  version: "1.0.0"
+  description: "Composables 函数应该使用 use 前缀，遵循 Vue 3 命名约定"
+  authors:
+    - "RuleForge Auto-Generated"
+    - "Vue 3 官方风格指南"
+  license: "MIT"
+  tags:
+    - "vue3"
+    - "composables"
+    - "naming"
+    - "best-practices"
+  created_at: "2026-01-20T10:15:00Z"
+
+rule:
+  trigger:
+    keywords:
+      - "use"
+      - "composable"
+      - "ref"
+      - "reactive"
+      - "computed"
+    file_pattern: "**/composables/*.ts"
+    language: "typescript"
+  
+  condition: "检测到可组合函数未使用 use 前缀命名"
+  
+  suggestion: |
+    Composables 函数应该使用 use 前缀命名，遵循 Vue 3 官方约定，提高代码可读性和一致性。
+    
+    问题代码示例：
+    ```typescript
+    // ❌ 不推荐：缺少 use 前缀
+    export function counter(initialValue: number = 0) {
+      const count = ref(initialValue)
+      const increment = () => count.value++
+      return { count, increment }
+    }
+    ```
+    
+    修复后代码：
+    ```typescript
+    // ✅ 推荐：使用 use 前缀
+    export function useCounter(initialValue: number = 0) {
+      const count = ref(initialValue)
+      const increment = () => count.value++
+      const reset = () => count.value = initialValue
+      
+      return {
+        count: readonly(count),
+        increment,
+        reset
+      }
+    }
+    ```
+    
+    最佳实践：
+    - 使用 use 前缀标识可组合函数
+    - 返回响应式状态的只读版本
+    - 提供完整的类型定义
+    - 包含适当的错误处理
+
+compatibility:
+  frameworks:
+    vue: ">=3.0.0"
+  languages:
+    typescript: ">=4.5.0"
+  rep_version: "0.1"
+
+---
+# 规则 3: 响应式数据最佳实践
+meta:
+  id: vue3-reactive-best-practices
+  name: "Vue 3 响应式数据最佳实践"
+  version: "1.0.0"
+  description: "合理使用 ref 和 reactive，避免不必要的响应式开销"
+  authors:
+    - "RuleForge Auto-Generated"
+    - "Vue 3 性能优化指南"
+  license: "MIT"
+  tags:
+    - "vue3"
+    - "reactivity"
+    - "performance"
+    - "ref"
+    - "reactive"
+  created_at: "2026-01-20T10:30:00Z"
+
+rule:
+  trigger:
+    keywords:
+      - "ref"
+      - "reactive"
+      - "shallowRef"
+      - "shallowReactive"
+      - "computed"
+    file_pattern: "**/*.{vue,ts}"
+    language: "typescript"
+  
+  condition: "检测到响应式数据使用不当，可能导致性能问题"
+  
+  suggestion: |
+    合理选择 ref 和 reactive，避免不必要的响应式开销，提高应用性能。
+    
+    使用指南：
+    
+    ## 使用 ref 的场景：
+    ```typescript
+    // ✅ 基本类型值
+    const count = ref(0)
+    const name = ref('')
+    const isLoading = ref(false)
+    
+    // ✅ DOM 引用
+    const inputRef = ref<HTMLInputElement>()
+    ```
+    
+    ## 使用 reactive 的场景：
+    ```typescript
+    // ✅ 对象字面量
+    const state = reactive({
+      user: { name: 'John', age: 30 },
+      settings: { theme: 'dark', language: 'en' }
+    })
+    ```
+    
+    ## 避免的情况：
+    ```typescript
+    // ❌ 不推荐：基本类型使用 reactive
+    const count = reactive({ value: 0 }) // 使用 ref(0) 代替
+    
+    // ❌ 不推荐：大型数组使用深度响应式
+    const largeArray = reactive([...]) // 考虑使用 shallowReactive
+    ```
+    
+    ## 性能优化技巧：
+    ```typescript
+    // ✅ 使用 shallowRef 避免深度响应式
+    const largeObject = shallowRef({ ...largeData })
+    
+    // ✅ 使用 markRaw 标记非响应式对象
+    const staticConfig = markRaw({ ...staticData })
+    
+    // ✅ 合理使用 computed 缓存计算
+    const fullName = computed(() => `${firstName.value} ${lastName.value}`)
+    ```
+
+compatibility:
+  frameworks:
+    vue: ">=3.2.0"
+  languages:
+    typescript: ">=4.5.0"
+  rep_version: "0.1"
+
+---
+# 规则 4: 组件事件定义规范
+meta:
+  id: vue3-component-events
+  name: "Vue 3 组件事件定义规范"
+  version: "1.0.0"
+  description: "使用 defineEmits 定义组件事件，提供类型安全的事件处理"
+  authors:
+    - "RuleForge Auto-Generated"
+    - "Vue 3 类型安全指南"
+  license: "MIT"
+  tags:
+    - "vue3"
+    - "events"
+    - "typescript"
+    - "defineEmits"
+  created_at: "2026-01-20T10:45:00Z"
+
+rule:
+  trigger:
+    keywords:
+      - "defineEmits"
+      - "$emit"
+      - "emits"
+      - "event"
+    file_pattern: "**/*.vue"
+    language: "typescript"
+  
+  condition: "检测到组件事件未使用 defineEmits 定义，缺少类型安全"
+  
+  suggestion: |
+    使用 defineEmits 定义组件事件，提供类型安全的事件参数和返回值。
+    
+    问题代码示例：
+    ```typescript
+    // ❌ 不推荐：字符串形式，缺少类型安全
+    export default {
+      emits: ['update:modelValue', 'submit', 'cancel']
+    }
+    ```
+    
+    修复后代码：
+    ```typescript
+    // ✅ 推荐：使用 defineEmits 和类型定义
+    interface Emits {
+      (e: 'update:modelValue', value: string): void
+      (e: 'submit', payload: FormData): void
+      (e: 'cancel'): void
+    }
+    
+    const emit = defineEmits<Emits>()
+    ```
+    
+    或者使用运行时验证：
+    ```typescript
+    // ✅ 推荐：运行时验证
+    const emit = defineEmits({
+      'update:modelValue': (value: string) => {
+        return typeof value === 'string' && value.length > 0
+      },
+      submit: (payload: FormData) => {
+        return payload instanceof FormData
+      },
+      cancel: () => true
+    })
+    ```
+    
+    最佳实践：
+    - 为所有事件定义明确的参数类型
+    - 使用接口定义复杂的事件签名
+    - 为重要事件添加运行时验证
+    - 保持事件名称的一致性
+
+compatibility:
+  frameworks:
+    vue: ">=3.3.0"
+  languages:
+    typescript: ">=5.0.0"
+  rep_version: "0.1"

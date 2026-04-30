@@ -1,0 +1,1 @@
+{"version":3,"file":"model-router.js","sourceRoot":"","sources":["../../../src/model-router/types/model-router.ts"],"names":[],"mappings":"AAAA;;GAEG;AAgZH;;GAEG;AACH,MAAM,OAAO,WAAY,SAAQ,KAAK;IAE3B;IAEA;IAHT,YACS,IAAqB,EAC5B,OAAe,EACR,OAAa;QAEpB,KAAK,CAAC,OAAO,CAAC,CAAC;QAJR,SAAI,GAAJ,IAAI,CAAiB;QAErB,YAAO,GAAP,OAAO,CAAM;QAGpB,IAAI,CAAC,IAAI,GAAG,aAAa,CAAC;IAC5B,CAAC;CACF"}

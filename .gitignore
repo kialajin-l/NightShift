@@ -1,0 +1,82 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Electron build outputs
+dist-electron/
+dist-electron-new/
+dist-electron-v2/
+dist-electron-v3/
+dist-electron-v4/
+dist-electron-v5/
+dist-electron-v6/
+electron-dist/
+
+# Build logs
+build-output.log
+debug.log
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Test outputs
+test-results/
+playwright-report/
+
+# Backup directories
+backup-*/
+
+# Data (local dev only)
+data/
+
+# CodePilot / Trae / RuleForge
+.codepilot/
+.trae/
+.ruleforge/
+.nightshift/
+
+# Release artifacts
+release/
+
+# Misc
+*.log
+*.bak
+
+# Temp / debug files
+*.pid
+tsconfig.tsbuildinfo
+tsc_errors*.txt
+package-clean.json
+package-fixed.json
+package-minimal.json
+package-simple.json
+page_output.html
+fix_types.py
+fix-dependencies.ps1
+minimal-install.ps1
+new-nightshift.ps1
+simple-fix.ps1
+test-integration.js
+test-next.config.js
+test_render.js
+validate-phase*.js
+
+# Local fix scripts
+fix_*.js

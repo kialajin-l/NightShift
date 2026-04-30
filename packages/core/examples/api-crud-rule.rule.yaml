@@ -1,0 +1,223 @@
+# RuleForge 自动生成的规则文件
+# 符合 REP v0.1 标准
+# 生成时间: 2024-01-01
+# 置信度: 高
+
+meta:
+  id: api-crud-rule
+  name: RESTful API CRUD 操作规则
+  version: 1.0.0
+  description: 自动生成标准的 RESTful API CRUD 操作实现
+  author: RuleForge Auto-Generated
+  created: 2024-01-01
+  updated: 2024-01-01
+
+rule:
+  trigger:
+    type: keyword
+    pattern: CRUD
+    context: 用户需要创建、读取、更新、删除等数据操作功能
+  condition:
+    type: frequency
+    threshold: 3
+  suggestion:
+    type: template
+    template: RESTful API CRUD 标准实现模板
+    code: |
+      // TypeScript 接口定义
+      export interface BaseEntity {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+      }
+      
+      export interface User extends BaseEntity {
+        name: string;
+        email: string;
+        role: string;
+      }
+      
+      export interface ApiResponse<T> {
+        data: T;
+        success: boolean;
+        message?: string;
+        pagination?: {
+          page: number;
+          pageSize: number;
+          total: number;
+          totalPages: number;
+        };
+      }
+      
+      // React CRUD Hook 示例
+      import { useState, useCallback } from 'react';
+      
+      export function useCrudApi<T extends BaseEntity>(endpoint: string) {
+        const [data, setData] = useState<T[]>([]);
+        const [loading, setLoading] = useState(false);
+        const [error, setError] = useState<string | null>(null);
+        
+        const fetchAll = useCallback(async (params?: Record<string, any>) => {
+          setLoading(true);
+          setError(null);
+          
+          try {
+            const queryString = params ? new URLSearchParams(params).toString() : '';
+            const response = await fetch(`${endpoint}?${queryString}`);
+            
+            if (!response.ok) throw new Error('获取数据失败');
+            
+            const result: ApiResponse<T[]> = await response.json();
+            setData(result.data);
+            return result;
+          } catch (err) {
+            setError(err instanceof Error ? err.message : '未知错误');
+            throw err;
+          } finally {
+            setLoading(false);
+          }
+        }, [endpoint]);
+        
+        const create = useCallback(async (item: Omit<T, 'id' | 'createdAt' | 'updatedAt'>) => {
+          setLoading(true);
+          setError(null);
+          
+          try {
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(item)
+            });
+            
+            if (!response.ok) throw new Error('创建失败');
+            
+            const result: ApiResponse<T> = await response.json();
+            setData(prev => [...prev, result.data]);
+            return result;
+          } catch (err) {
+            setError(err instanceof Error ? err.message : '未知错误');
+            throw err;
+          } finally {
+            setLoading(false);
+          }
+        }, [endpoint]);
+        
+        const update = useCallback(async (id: string, updates: Partial<T>) => {
+          setLoading(true);
+          setError(null);
+          
+          try {
+            const response = await fetch(`${endpoint}/${id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updates)
+            });
+            
+            if (!response.ok) throw new Error('更新失败');
+            
+            const result: ApiResponse<T> = await response.json();
+            setData(prev => prev.map(item => item.id === id ? result.data : item));
+            return result;
+          } catch (err) {
+            setError(err instanceof Error ? err.message : '未知错误');
+            throw err;
+          } finally {
+            setLoading(false);
+          }
+        }, [endpoint]);
+        
+        const remove = useCallback(async (id: string) => {
+          setLoading(true);
+          setError(null);
+          
+          try {
+            const response = await fetch(`${endpoint}/${id}`, {
+              method: 'DELETE'
+            });
+            
+            if (!response.ok) throw new Error('删除失败');
+            
+            setData(prev => prev.filter(item => item.id !== id));
+            return { success: true };
+          } catch (err) {
+            setError(err instanceof Error ? err.message : '未知错误');
+            throw err;
+          } finally {
+            setLoading(false);
+          }
+        }, [endpoint]);
+        
+        return {
+          data,
+          loading,
+          error,
+          fetchAll,
+          create,
+          update,
+          remove
+        };
+      }
+      
+      // FastAPI CRUD 路由示例
+      from fastapi import APIRouter, HTTPException, Depends
+      from pydantic import BaseModel
+      from typing import List, Optional
+      
+      router = APIRouter()
+      
+      class UserCreate(BaseModel):
+          name: str
+          email: str
+          role: str = "user"
+      
+      class UserUpdate(BaseModel):
+          name: Optional[str] = None
+          email: Optional[str] = None
+          role: Optional[str] = None
+      
+      @router.get("/", response_model=List[User])
+      async def get_users(skip: int = 0, limit: int = 100):
+          users = await get_all_users(skip, limit)
+          return users
+      
+      @router.get("/{user_id}", response_model=User)
+      async def get_user(user_id: str):
+          user = await get_user_by_id(user_id)
+          if not user:
+              raise HTTPException(status_code=404, detail="用户不存在")
+          return user
+      
+      @router.post("/", response_model=User)
+      async def create_user(user_data: UserCreate):
+          user = await create_new_user(user_data)
+          return user
+      
+      @router.put("/{user_id}", response_model=User)
+      async def update_user(user_id: str, updates: UserUpdate):
+          user = await update_existing_user(user_id, updates)
+          if not user:
+              raise HTTPException(status_code=404, detail="用户不存在")
+          return user
+      
+      @router.delete("/{user_id}")
+      async def delete_user(user_id: str):
+          success = await delete_user_by_id(user_id)
+          if not success:
+              raise HTTPException(status_code=404, detail="用户不存在")
+          return {"message": "用户删除成功"}
+    description: 自动生成标准的 RESTful API CRUD 操作，包含前端 Hook 和后端路由实现
+
+compatibility:
+  languages:
+    - typescript
+    - javascript
+    - python
+  frameworks:
+    - react
+    - vue
+    - fastapi
+    - express
+  tools:
+    - vscode
+    - webstorm
+    - nightshift
